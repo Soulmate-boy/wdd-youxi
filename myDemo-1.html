@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="target-densitydpi=320,width=640,user-scalable=no">
+    <title>Fingeric</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <audio id='bgMusic' style='display: none;' src='http://boscdn.bpc.baidu.com/v1/developer/076a7fb8-b106-4e96-bbca-988aeae11260.mp3'></audio>
+
+
+<script>
+    window.onload = function () {
+        var audio = document.getElementById("bgMusic");
+        var canvasArr = [],
+            number = 10,
+            colorArr = ['pink', 'red', '#E066FF', '#D15FEE', 'yellow', '#B3EE3A','#FF00FF','DB7093','#CAE1FF','#ABB2FF'];
+
+        /*手指按下*//*touchstart*/
+        document.body.addEventListener('touchstart', function (e) {
+            if(canvasArr.length>number)return;
+            // console.log(e.touches);
+            // console.log(e.targetTouches);/*dom上的手指列表*/
+            // console.log(e.changedTouches);/*事件上的手指列表*/
+            let Touch = e.targetTouches;
+            let length = e.targetTouches.length;
+            /*todo--点击一次执行一个构造函数*/
+            init(200, Touch[length - 1].clientX, Touch[length - 1].clientY);
+        });
+
+        /*手指移动*//*touchmove*/
+        document.body.addEventListener('touchmove', function (e) {
+            // console.log(e)
+            /*todo--监听到那个手指移动，就给那个构造函数移动方法*/
+            // canvasArr[i] 移动
+
+        });
+
+        /*手指抬起*//*touchend*/
+        document.body.addEventListener('touchend', function (e) {
+            if(canvasArr.length>number)return;
+            // console.log(e);
+            /*todo--监听那个手指弹起，就清除那个构造函数*/
+            // canvasArr[i] 删除
+            audio.currentTime = 0;
+            audio.play();
+
+        });
+
+        function randem(max = 0, min = 0) {
+            return Math.floor(Math.random() * colorArr.length)
+        }
+
+
+        /*创建canvas*/
+        function init(wh, x, y) {
+            
+            let canvas = document.createElement('canvas');
+            let context = canvas.getContext('2d');
+            canvas.width = wh;
+            canvas.height = wh;
+            // canvas.style.background = 'white';/*显示canvas的大小*/
+            canvas.style.position = 'absolute';
+            canvas.style.top = y - (wh / 2) + 'px';
+            canvas.style.left = x - (wh / 2) + 'px';
+            /*画圆*/
+            context.beginPath();
+            context.arc(wh / 2, wh / 2, wh / 4, 0, 2 * Math.PI, true);
+            context.closePath();
+            context.fillStyle = colorArr[randem()];//绘制样式，图形颜色
+            context.fill();//调用样式
+
+            /*动画*/
+            var hourNumbers = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2];    //定义标记小时的数组
+            hourNumbers.map(function (number, i) {                    //遍历 取出各刻度及所在索引
+                //每个刻度所占弧度为索引乘以一小时的弧度，即 1点钟30度，2点钟60度，以此类推..
+                var rad = 2 * Math.PI / 12 * i;
+                var x = Math.cos(rad) * (wh / 3) + wh / 2;
+                var y = Math.sin(rad) * (wh / 3) + wh / 2; 　　　　　　　　//确定各刻度点 X、Y坐标
+                context.textAlign = 'center'; 　　　　　　　　　　　　　　　　//绘制的刻度在整个画布左右居中
+                context.textBaseline = 'middle'; 　　　　　　　　　　　　　　//同理，上下居中
+                context.font = 24 + 'px'; 　　　　　　　　　　　//设置显示刻度的数字 1,2,3.. 的字体及字号
+                context.fillText(number, x, y) 　　　　　　　　　　　　　　　//绘制文字
+            });
+
+            document.body.appendChild(canvas);
+            canvasArr.push(canvas);
+
+            let canvasS = window.document.getElementsByTagName('canvas');
+            let nums = 0;
+            setInterval(function () {
+                nums += 1;
+                for (let i = 0; i < canvasArr.length; i++) {
+                    canvasS[i].style.transform = 'rotate(' + nums + 'deg)';
+                }
+                nums === 18000 ? nums = 1 : nums;
+            }, 50 / 1000)
+        }
+
+    }
+
+
+    /*介绍
+    * 1.设置主页面，（开始游戏，设置人数）
+    *                 todo--扩展：增加设置二维码图片，扫码支付（相应额度），转至平台账户（人数 == 扫码个数）
+    *
+    * 2.设置游戏界面，（背景音乐）
+    *
+    * 3.设置游戏过程：
+    *       1.一个人触摸显示一个转圈的动画（触摸时声音提示，并显示设置好的动画）
+    *           如果手指抬起，提示音，并且判断是否达到游戏开始条件
+    *
+    *       2.当手指数量达到设置的数量时执行 js （随机抽取开始，并且声音变化，音频节奏加快）
+    *            随机数抽取，被随机中的显示高亮
+    *
+    *       3.中途有人退出时，声音提示一下（不中断 抽取函数）
+    *            有人退出 直接out，删除相应的canvas，以及相应的事件，函数继续运行
+    *
+    *       4.抽取结束，声音提示（胜利的音乐）
+    *            获胜者的canvas高亮，并且变换音乐，其他人全部删除canvas，并且移除事件
+    *
+    *       5.判断胜利者，手指抬起，则游戏彻底结束，显示按钮【确定，重置】
+    *            确定：触发重新开始，配置不变,游戏重新开始
+    *            重置：回到主页面，需重新设置人数，并且开始游戏
+    *                  todo--扩展：触发红包功能，所有额度从平台账户转至胜利者钱包
+    *
+    *
+    *       6.
+    *
+    *
+    *
+    * */
+
+</script>
+</body>
+</html>
